@@ -9,7 +9,7 @@ opt-fast-tiny-hang250-rep2-n20.json   20   250  80.0    394.1    377-525       3
 opt-fast-tiny-hang250-n20.json        20   250  80.0    394.4    373-474       294
 opt-fast-tiny-rep2-n20.json           20   350  80.0    395.8    377-458       299
 opt-fast-arm80-n20.json               20   350  80.0    498.2    488-514         -
-opt-fast-hang200-n20.json             20   150  80.0    510.7    502-544         -
+opt-fast-hang150-n20.json             20   150  80.0    510.7    502-544         -
 opt-fast-hang120-n20.json             20   120  80.0    511.7    494-554         -
 opt-fast-hang250-n20.json             20   250  80.0    515.4    496-547         -
 opt-fast-arm80-rep2-n20.json          20   350  80.0    517.0    486-537       408
@@ -51,6 +51,13 @@ opt-baseline-rep3-n20.json             785.0   797.2   +12.2
 ========================================================================================
 TEST 3 -- are the stages serial? sum(stage work) vs pipeline span
 ========================================================================================
+  no speculation, so the whole pipeline is observable end to end:
+  run                             sum(work)     span  span/sum
+  opt-baseline-rep2-n20.json          431.3    436.2     1.011
+  opt-baseline-rep3-n20.json          435.0    442.8     1.018
+  1.0 means perfectly serial. Below 1.0 would mean the stages overlap.
+  They do not: the LM needs a transcript and TTS needs a sentence.
+
   best run: opt-fast-tiny-arm40-hang250-n20.json  (n=20)
   stage              work ms  in-gap ms   hidden by speculation?
   asr_final            111.5        0.0   yes

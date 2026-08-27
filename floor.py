@@ -123,6 +123,22 @@ def main():
     print("\n" + "=" * 88)
     print("TEST 3 -- are the stages serial? sum(stage work) vs pipeline span")
     print("=" * 88)
+    # The dependency-graph claim, measured rather than argued. Without
+    # speculation the pipeline runs start-to-finish after the endpoint, so its
+    # span is directly observable: gap - hangover. If ASR/LM/TTS overlapped at
+    # all, the span would be shorter than the summed stage work.
+    print("  no speculation, so the whole pipeline is observable end to end:")
+    print(f'  {"run":30s} {"sum(work)":>10s} {"span":>8s} {"span/sum":>9s}')
+    for name, d in load("opt-baseline*.json"):
+        rows_ = [(sum(t["work_ms"].values()),
+                  t["gap_ms"] - t["stage_ms"]["endpoint_hangover_ms"])
+                 for t in d["turns"] if t.get("work_ms")]
+        if not rows_:
+            continue
+        W_, S_ = med([r[0] for r in rows_]), med([r[1] for r in rows_])
+        print(f'  {name[:30]:30s} {W_:10.1f} {S_:8.1f} {S_/W_:9.3f}')
+    print("  1.0 means perfectly serial. Below 1.0 would mean the stages overlap.")
+    print("  They do not: the LM needs a transcript and TTS needs a sentence.\n")
     best = min([r for r in rows if r["W"]], key=lambda r: r["gap"])
     d = dict(load())[best["run"]]
     print(f'  best run: {best["run"]}  (n={best["n"]})')

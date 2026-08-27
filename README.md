@@ -65,7 +65,21 @@ audio callback is ~3 ms of it):
 | baseline (no speculation) | 781.3 | 796.4 | +15.2 |
 | baseline rep3 | 785.0 | 797.2 | +12.2 |
 
-**Test 3 — what is actually irreducible.** In the fastest configuration, per
+**Test 3a — the stages really are serial.** Without speculation the pipeline runs
+start to finish after the endpoint, so its span is directly observable as
+`gap − hangover`. If ASR, LM and TTS overlapped at all, that span would be shorter
+than their summed work. It is not:
+
+| run | sum of stage work | pipeline span | span / sum |
+|---|---|---|---|
+| baseline rep2 | 431.3 ms | 436.2 ms | **1.011** |
+| baseline rep3 | 435.0 ms | 442.8 ms | **1.018** |
+
+That is the dependency graph, measured: the LM cannot start without a transcript
+and TTS cannot start without a sentence, so `W_total` is a real serial cost. You
+cannot parallelise under it — only make the stages cheaper, or start them earlier.
+
+**Test 3b — what is actually irreducible.** In the fastest configuration, per
 turn (n=20, medians):
 
 | stage | work on its own clock | charged to the gap | hidden? |
