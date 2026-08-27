@@ -122,7 +122,16 @@ class Moshi:
                 out = self.mimi.get_decoded()
                 if out is None:
                     time.sleep(1e-3)
-        return (np.asarray(out, dtype=np.float32) if out is not None else None), text
+        if out is None:
+            return None, text
+        # local.py asserts the decoded frame is (1920,); flatten and fit to the
+        # frame either way, so one odd frame cannot silently shift the whole
+        # output stream out of alignment with the input.
+        o = np.asarray(out, dtype=np.float32).reshape(-1)
+        if len(o) != FRAME:
+            o = (o[:FRAME] if len(o) > FRAME
+                 else np.pad(o, (0, FRAME - len(o))))
+        return o, text
 
 
 def run_turn(m: Moshi, prompt_pcm: np.ndarray, lead_ms=300.0, tail_ms=4000.0,
