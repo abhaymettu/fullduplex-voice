@@ -1,7 +1,8 @@
 # fullduplex-voice
 
-**A tuned cascade answers in 386 ms on a laptop. The architectural floor everyone
-assumes is there is mostly the endpointer doing nothing while it waits.**
+**A tuned cascade answers in 386 ms on a laptop, and 499 ms on real human speech.
+The architectural floor everyone assumes is there is mostly the endpointer sitting
+on its hands, waiting out silence it could have been working through.**
 
 This repo set out to prove a cascade can never be fast and that you need a native
 speech-to-speech model instead. The measurements did not agree, so the headline
