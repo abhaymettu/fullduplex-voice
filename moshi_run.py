@@ -222,8 +222,18 @@ def main():
             np.save(Path(args.out).with_suffix(".turn0.user.npy"), x)
             np.save(Path(args.out).with_suffix(".turn0.moshi.npy"), y)
 
+    import mlx.core as _mx
+    import resource as _res
     rec = dict(
         run_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
+        cost=dict(
+            weights_on_disk_mb=round(
+                (MODELS / "model.q4.safetensors").stat().st_size / 1e6, 1),
+            mimi_on_disk_mb=round((MODELS / "mimi.safetensors").stat().st_size / 1e6, 1),
+            mlx_peak_mb=round(_mx.get_peak_memory() / 1e6, 1),
+            mlx_active_mb=round(_mx.get_active_memory() / 1e6, 1),
+            rss_peak_mb=round(_res.getrusage(_res.RUSAGE_SELF).ru_maxrss / 1e6, 1),
+        ),
         model="kyutai/moshiko-mlx-q4 (4-bit, MLX)", frame_ms=FRAME_MS,
         sample_rate=SR_MOSHI, model_load_ms=round(m.load_ms, 1),
         loadavg=os.getloadavg(), n_turns=args.n, mode="bargein" if args.bargein else "turns",
