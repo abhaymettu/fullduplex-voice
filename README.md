@@ -346,6 +346,34 @@ So "loads successfully" and "emits valid tokens" are not integrity checks either
 A partially-zeroed checkpoint passes both and then behaves like a broken decoder,
 which is a much more attractive and much more wrong thing to go debug.
 
+**And there was a third layer under that one.** With the LM checkpoint repaired,
+the text went coherent immediately — *"Hi, how is your day? I close on Sundays."* —
+but the audio was still silent, and the LM was emitting perfectly valid audio
+tokens (61 of 62 frames, correct `(1, 8)` shape, plausible codebook indices). That
+really did look like a decoder bug. It was not: **`mimi.safetensors` was corrupt
+too**, from the same download, and I had only ever checked its size. A Mimi with
+zeroed decoder weights encodes fine and decodes every token to silence.
+
+The fix that should have come first: HuggingFace names LFS blobs by their sha256,
+so the expected digest is free.
+
+```
+.venv/bin/python repair.py --verify
+```
+
+Four checks were tried tonight, in increasing order of usefulness:
+
+| check | verdict on a broken file |
+|---|---|
+| file size | **passed** — it was oversized, which was itself the corruption |
+| zero-run scan | **passed** — cannot see bytes that are wrong but non-zero |
+| model loads (`strict=True`) | **passed** — shapes match when tensors are zeros |
+| **sha256 vs the published digest** | **caught it, both files, immediately** |
+
+The tail corruption was found only by spot-checking random windows against the
+server — 1 window in 10 mismatched, at 4.68 GB, non-zero and wrong, which a
+zero-scan is structurally blind to.
+
 ## Layout
 
 | file | what |
