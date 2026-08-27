@@ -106,6 +106,9 @@ class Moshi:
         enc = None
         while enc is None:
             enc = self.mimi.get_encoded()
+            if enc is None:
+                time.sleep(1e-3)  # rustymimi decodes on its own thread; a tight
+                                  # spin starves it behind the GIL and hangs
         tokens = self.mx.array(enc).transpose(1, 0)[:, :8]
         text_token = self.gen.step(tokens)[0].item()
         text = None
@@ -117,6 +120,8 @@ class Moshi:
             self.mimi.decode(np.array(at).astype(np.uint32))
             while out is None:
                 out = self.mimi.get_decoded()
+                if out is None:
+                    time.sleep(1e-3)
         return (np.asarray(out, dtype=np.float32) if out is not None else None), text
 
 
