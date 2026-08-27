@@ -1,0 +1,178 @@
+{
+ "run_at": "2026-08-27T00:59:52",
+ "what": "how long the cascade keeps talking after the user starts interrupting",
+ "device": "BlackHole 2ch",
+ "interrupt_at_ms": 900.0,
+ "stop_latency_ms": {
+  "n": 20,
+  "median": 1173.3,
+  "iqr_lo": 1059.9,
+  "iqr_hi": 1263.9,
+  "min": 541.3,
+  "max": 5916.1
+ },
+ "n_stopped_early": 0,
+ "note": "Player has no stop path and capture() builds a fresh input queue per turn, so the interrupting speech is also discarded.",
+ "turns": [
+  {
+   "turn": 0,
+   "reply": "I'm available 24/7.",
+   "reply_audio_ms": 2020.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1121.1,
+   "stopped_early": false
+  },
+  {
+   "turn": 1,
+   "reply": "No parking available near the entrance.",
+   "reply_audio_ms": 1960.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1061.0,
+   "stopped_early": false
+  },
+  {
+   "turn": 2,
+   "reply": "Annual pass costs vary depending on the location and provider, but it's usually around $20-$50 per year.",
+   "reply_audio_ms": 6810.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 5916.1,
+   "stopped_early": false
+  },
+  {
+   "turn": 3,
+   "reply": "Sorry, dogs are not allowed inside.",
+   "reply_audio_ms": 2120.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1229.8,
+   "stopped_early": false
+  },
+  {
+   "turn": 4,
+   "reply": "\"Your order will be at your doorstep.\"",
+   "reply_audio_ms": 1500.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 604.1,
+   "stopped_early": false
+  },
+  {
+   "turn": 5,
+   "reply": "I'm available 24/7.",
+   "reply_audio_ms": 1960.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1063.5,
+   "stopped_early": false
+  },
+  {
+   "turn": 6,
+   "reply": "No parking available near the entrance.",
+   "reply_audio_ms": 2055.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1166.3,
+   "stopped_early": false
+  },
+  {
+   "turn": 7,
+   "reply": "Annual pass costs vary depending on the location and provider, but it's usually around $20-$50 per year.",
+   "reply_audio_ms": 6660.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 5766.5,
+   "stopped_early": false
+  },
+  {
+   "turn": 8,
+   "reply": "Sorry, dogs are not allowed inside.",
+   "reply_audio_ms": 2090.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1192.7,
+   "stopped_early": false
+  },
+  {
+   "turn": 9,
+   "reply": "\"Your order will be at your doorstep.\"",
+   "reply_audio_ms": 1480.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 584.1,
+   "stopped_early": false
+  },
+  {
+   "turn": 10,
+   "reply": "I'm available 24/7.",
+   "reply_audio_ms": 1955.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1059.6,
+   "stopped_early": false
+  },
+  {
+   "turn": 11,
+   "reply": "No parking available near the entrance.",
+   "reply_audio_ms": 2170.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1274.4,
+   "stopped_early": false
+  },
+  {
+   "turn": 12,
+   "reply": "Annual pass costs vary depending on the location and provider, but it's usually around $20-$50 per year.",
+   "reply_audio_ms": 6580.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 5681.0,
+   "stopped_early": false
+  },
+  {
+   "turn": 13,
+   "reply": "Sorry, dogs are not allowed inside.",
+   "reply_audio_ms": 2045.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1154.6,
+   "stopped_early": false
+  },
+  {
+   "turn": 14,
+   "reply": "\"Your order will be at your doorstep.\"",
+   "reply_audio_ms": 1435.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 541.3,
+   "stopped_early": false
+  },
+  {
+   "turn": 15,
+   "reply": "I'm available 24/7.",
+   "reply_audio_ms": 2090.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1197.8,
+   "stopped_early": false
+  },
+  {
+   "turn": 16,
+   "reply": "No parking available near the entrance.",
+   "reply_audio_ms": 2130.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1232.4,
+   "stopped_early": false
+  },
+  {
+   "turn": 17,
+   "reply": "Annual pass costs vary depending on the location and provider, but it's usually around $20-$50 per year.",
+   "reply_audio_ms": 6350.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 5455.7,
+   "stopped_early": false
+  },
+  {
+   "turn": 18,
+   "reply": "Sorry, dogs are not allowed inside.",
+   "reply_audio_ms": 2075.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 1180.3,
+   "stopped_early": false
+  },
+  {
+   "turn": 19,
+   "reply": "\"Your order will be at your doorstep.\"",
+   "reply_audio_ms": 1575.0,
+   "interrupt_at_ms": 900.0,
+   "stop_latency_ms": 680.5,
+   "stopped_early": false
+  }
+ ]
+}
