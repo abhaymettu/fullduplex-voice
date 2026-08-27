@@ -1,0 +1,78 @@
+{
+ "run_at": "2026-08-27T09:07:19",
+ "cost": {
+  "weights_on_disk_mb": 4805.5,
+  "mimi_on_disk_mb": 384.6,
+  "mlx_peak_mb": 4978.8,
+  "mlx_active_mb": 4947.4,
+  "rss_peak_mb": 3166.9
+ },
+ "model": "kyutai/moshiko-mlx-q4 (4-bit, MLX)",
+ "frame_ms": 80.0,
+ "sample_rate": 24000,
+ "model_load_ms": 7132.4,
+ "loadavg": [
+  4.00439453125,
+  4.611328125,
+  4.76318359375
+ ],
+ "n_turns": 2,
+ "mode": "turns",
+ "gap_definition": "agent speech onset - user speech offset, both silence-trimmed, gap.py segments(merge_gap_ms=30, min_len_ms=20) -- vendored from aliveness-threshold harness/audio.py@b7ccbb7",
+ "gap_ms": {
+  "n": 2,
+  "median": 220.0,
+  "iqr_lo": 210.0,
+  "iqr_hi": 230.0,
+  "min": 210.0,
+  "max": 230.0,
+  "mean": 220.0
+ },
+ "n_overlapping": 0,
+ "stop_latency_ms": null,
+ "n_interrupted_while_speaking": null,
+ "n_silent": 0,
+ "rtf": {
+  "n": 2,
+  "median": 0.9,
+  "iqr_lo": 0.8,
+  "iqr_hi": 1.0,
+  "min": 0.8,
+  "max": 1.0,
+  "mean": 0.9
+ },
+ "turns": [
+  {
+   "turn": 0,
+   "prompt": "What time do you close on Sunday?",
+   "gap_ms": 210.0,
+   "user_offset_ms": 2025.0,
+   "reply_text": "Hi, how was your day? Oh, I don't know. I don't know if I know. But I think",
+   "rtf": 1.011,
+   "wall_ms": 6067.1,
+   "stream_ms": 6000.0,
+   "step_ms_median": 66.06,
+   "n_frames": 75,
+   "out_speech_ms": 3080.0,
+   "out_segments": 6,
+   "overlapping": false,
+   "bargein_at_ms": null
+  },
+  {
+   "turn": 1,
+   "prompt": "Is there parking near the entrance?",
+   "gap_ms": 230.0,
+   "user_offset_ms": 1975.0,
+   "reply_text": "mean, I don' know if I know, but I've seen them,",
+   "rtf": 0.837,
+   "wall_ms": 4955.3,
+   "stream_ms": 5920.0,
+   "step_ms_median": 65.98,
+   "n_frames": 74,
+   "out_speech_ms": 2885.0,
+   "out_segments": 4,
+   "overlapping": false,
+   "bargein_at_ms": null
+  }
+ ]
+}

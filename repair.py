@@ -14,7 +14,7 @@ loads with strict=True and generates.
     .venv/bin/python repair.py --scan          # map holes, change nothing
     .venv/bin/python repair.py --fix           # patch header, truncate, refetch
 """
-import json, struct, subprocess, sys, threading
+import hashlib, json, struct, subprocess, sys, threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import numpy as np
@@ -22,6 +22,17 @@ import numpy as np
 F = Path("models/model.q4.safetensors")
 URL = "https://huggingface.co/kyutai/moshiko-mlx-q4/resolve/main/model.q4.safetensors"
 TOTAL = 4805545317
+# HuggingFace names LFS blobs by their sha256, so the expected digests are free.
+# This is the ONLY trustworthy completeness check. Size passes on a truncated or
+# an over-long file; "it loads" passes on a checkpoint that is 50% zeros; and a
+# zero-scan cannot see a region that is non-zero but wrong. All three of those
+# happened here in one night.
+SHA = {
+    "models/model.q4.safetensors":
+        "7959d590e23c1ebc78cfa3501344a6ff331561aa0cadc4429b733b890bbc919c",
+    "models/mimi.safetensors":
+        "09b782f0629851a271227fb9d36db65c041790365f11bbe5d3d59369cf863f50",
+}
 MIN_HOLE = 4096          # shorter zero runs are plausibly real weights
 CHUNK = 1 << 26          # 64 MB scan window
 # One stream tops out around 90 KB/s on this link; several in parallel measured
@@ -43,6 +54,29 @@ def fetch(start, end, retries=8):
         if r.returncode == 0 and len(r.stdout) == end - start + 1:
             return r.stdout
     raise RuntimeError(f"could not fetch {start}-{end}")
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for blk in iter(lambda: fh.read(1 << 24), b""):
+            h.update(blk)
+    return h.hexdigest()
+
+
+def verify():
+    """True only if every weight file matches its published sha256."""
+    ok = True
+    for path, want in SHA.items():
+        p = Path(path)
+        if not p.exists():
+            print(f"MISSING  {path}"); ok = False; continue
+        got = sha256(p)
+        good = got == want
+        ok &= good
+        print(f'{"OK      " if good else "CORRUPT "} {path}\n         got  {got}'
+              + ("" if good else f"\n         want {want}"))
+    return ok
 
 
 def header():
@@ -86,6 +120,8 @@ def holes(lo=0, hi=TOTAL):
 
 
 def main():
+    if "--verify" in sys.argv:
+        sys.exit(0 if verify() else 1)
     if "--fix" in sys.argv:
         # 1. clean header, 2. drop the junk tail
         hdr = fetch(0, 167580)
