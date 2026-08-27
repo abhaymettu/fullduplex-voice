@@ -241,6 +241,7 @@ interrupted is just the conversation continuing.
 | `gap.py` | the latency definition, vendored and pinned. `--demo` self-checks it |
 | `floor.py` | the three tests above, from the sibling's per-turn records |
 | `cascade_baseline.py` | the cascade numbers, recomputed from raw records |
+| `human_speech.py` | the CREMA-D arming result, recomputed from raw records |
 | `moshi_run.py` | runs Moshi frame by frame and measures the same gap |
 | `compare.py` | the side-by-side table |
 | `results/` | run records |
@@ -250,7 +251,7 @@ interrupted is just the conversation continuing.
 Every module carries one self-check. Run them all:
 
 ```
-for m in gap floor cascade_baseline cascade_bargein moshi_run; do .venv/bin/python $m.py --demo; done
+for m in gap floor cascade_baseline cascade_bargein human_speech moshi_run; do .venv/bin/python $m.py --demo; done
 ```
 
 `gap.py --demo` measures a synthetic 800 ms gap; `moshi_run.py --demo` a synthetic
