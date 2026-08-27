@@ -192,3 +192,15 @@ interrupted is just the conversation continuing.
 | `moshi_run.py` | runs Moshi frame by frame and measures the same gap |
 | `compare.py` | the side-by-side table |
 | `results/` | run records |
+
+## Checks
+
+Every module carries one self-check. Run them all:
+
+```
+for m in gap floor cascade_baseline cascade_bargein moshi_run; do .venv/bin/python $m.py --demo; done
+```
+
+`gap.py --demo` measures a synthetic 800 ms gap; `moshi_run.py --demo` a synthetic
+500 ms one; `cascade_bargein.py --demo` re-reads the sibling's current source and
+fails if `Player` ever grows a `stop()`.
