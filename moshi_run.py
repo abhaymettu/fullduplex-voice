@@ -217,8 +217,10 @@ def main():
         ))
         print(f"  turn {i}: gap={turns[-1]['gap_ms']} rtf={turns[-1]['rtf']} "
               f"text={text[:60]!r}", file=sys.stderr)
-        if args.out:
-            np.save(Path(args.out).with_suffix(f".turn{i}.out.npy"), y) if i < 3 else None
+        # keep turn 0's audio so the interruption can actually be listened to
+        if i == 0:
+            np.save(Path(args.out).with_suffix(".turn0.user.npy"), x)
+            np.save(Path(args.out).with_suffix(".turn0.moshi.npy"), y)
 
     rec = dict(
         run_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
