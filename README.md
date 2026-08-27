@@ -128,9 +128,20 @@ latency axis and start being different kinds of system.
   Audio the user produces while the agent is talking is not in the next turn's
   queue. It is discarded.
 
-So interrupting a cascade turn costs the remainder of the reply — the recorded
-reply durations are median **2108 ms** (IQR 1949–2250, max 6755, n=40) — and the
-interrupting utterance is lost, so the user has to say it again.
+`cascade_bargein.py` measures the first half of that rather than asserting it: it
+imports the sibling's real `Player`, plays real cascade replies on the same
+BlackHole device, "interrupts" 900 ms in, and times how long the agent keeps
+going.
+
+| | n | median | IQR | min | max | stopped early |
+|---|---|---|---|---|---|---|
+| cascade keeps talking after interruption | 20 | **1200 ms** | 1059–1298 | 398 | 5966 | **0 / 20** |
+
+Zero out of twenty stopped. And because `capture()` builds a fresh queue per
+turn, the interrupting utterance is not merely late — it is discarded, so the
+user has to say it again. `cascade_bargein.py --demo` re-checks the structural
+claim against the sibling's current source and fails loudly if `Player` ever
+grows a `stop()`.
 
 This is a property of *this* cascade, not of cascades in principle: you can bolt
 barge-in on with an always-on VAD and an explicit stop. The point is that it is a
