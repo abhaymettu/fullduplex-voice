@@ -157,13 +157,23 @@ def run_turn(m: Moshi, prompt_pcm: np.ndarray, lead_ms=300.0, tail_ms=4000.0,
 
 
 def measure(x, y):
-    """Gap = Moshi speech onset after user speech offset. gap.py's definition."""
+    """Gap = Moshi speech onset after user speech offset. gap.py's definition.
+
+    Full duplex complicates this in a way the cascade cannot: Moshi may already
+    be talking when the user stops. Taking "the first onset after the offset"
+    would then skip the segment it is currently in the middle of and report the
+    *next* utterance, badly overstating the gap. So an overlapping segment is
+    detected and reported as such (gap 0, overlapping=True) rather than silently
+    dropped. That is a real behaviour, not an error, and it is counted.
+    """
     off = gap.speech_offset_ms(x, SR_MOSHI)
     if off is None:
-        return None, None
+        return None, None, False
     segs = gap.segments(y, SR_MOSHI, **gap.SEG_KW)
+    if any(a <= off < b for a, b in segs):
+        return 0.0, off, True          # already speaking when the user stopped
     after = [a for a, b in segs if a >= off]
-    return (after[0] - off) if after else None, off
+    return ((after[0] - off) if after else None), off, False
 
 
 def stats(v):
@@ -202,7 +212,7 @@ def main():
                                        bargein_at_ms=ba if args.bargein else None,
                                        bargein_pcm=interrupt)
         wall = (time.perf_counter() - t0) * 1000.0
-        g, off = measure(x, y)
+        g, off, overlap = measure(x, y)
         stream_ms = len(x) / SR_MOSHI * 1000.0
         segs = gap.segments(y, SR_MOSHI, **gap.SEG_KW)
         turns.append(dict(
@@ -212,7 +222,7 @@ def main():
             wall_ms=round(wall, 1), stream_ms=round(stream_ms, 1),
             step_ms_median=round(s.median(step_ms), 2), n_frames=len(step_ms),
             out_speech_ms=round(sum(b - a for a, b in segs), 1),
-            out_segments=len(segs),
+            out_segments=len(segs), overlapping=overlap,
             bargein_at_ms=None if not args.bargein else round(ba, 1),
         ))
         print(f"  turn {i}: gap={turns[-1]['gap_ms']} rtf={turns[-1]['rtf']} "
@@ -241,6 +251,8 @@ def main():
                         "gap.py segments(merge_gap_ms=30, min_len_ms=20) -- vendored from "
                         "aliveness-threshold harness/audio.py@b7ccbb7"),
         gap_ms=stats([t["gap_ms"] for t in turns]),
+        n_overlapping=sum(t["overlapping"] for t in turns),
+        n_silent=sum(t["gap_ms"] is None for t in turns),
         rtf=stats([t["rtf"] for t in turns]),
         turns=turns,
     )
@@ -256,11 +268,16 @@ def demo():
     sil = lambda ms: np.zeros(int(ms*sr/1000), dtype=np.float32)
     x = np.concatenate([sil(300), tone(600), sil(3000)])          # user stops at 900ms
     y = np.concatenate([sil(1400), tone(800), sil(1700)])         # moshi starts at 1400ms
-    g, off = measure(x, y)
+    g, off, ov = measure(x, y)
     assert abs(off - 900) < 15, f"user offset {off}"
     assert abs(g - 500) < 15, f"gap {g}, want 500"
+    assert not ov
     # a silent agent must report no gap rather than inventing one
     assert measure(x, np.zeros_like(y))[0] is None
+    # an agent already talking when the user stops is gap 0, not the NEXT utterance
+    y2 = np.concatenate([sil(600), tone(700), sil(600), tone(500), sil(2100)])
+    g2, _, ov2 = measure(x, y2)
+    assert ov2 and g2 == 0.0, f"overlap not detected: gap={g2} overlapping={ov2}"
     print(f"demo ok (500 ms gap measured as {g:.1f} ms)")
 
 
