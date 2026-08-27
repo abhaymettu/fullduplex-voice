@@ -176,6 +176,28 @@ def measure(x, y):
     return ((after[0] - off) if after else None), off, False
 
 
+def measure_bargein(x, y, bargein_at_ms):
+    """How long Moshi keeps talking after the user starts interrupting.
+
+    Comparable to cascade_bargein.py's number by construction: both are
+    "ms of agent speech after the interrupting utterance begins".
+
+    Returns (stop_latency_ms, interrupt_onset_ms, was_speaking). If Moshi was not
+    actually talking at that moment there is nothing to interrupt, and the turn
+    is flagged rather than scored -- otherwise a silent agent would look like an
+    infinitely polite one.
+    """
+    ins = [a for a, b in gap.segments(x, SR_MOSHI, **gap.SEG_KW) if a >= bargein_at_ms - 50]
+    if not ins:
+        return None, None, False
+    onset = ins[0]
+    segs = gap.segments(y, SR_MOSHI, **gap.SEG_KW)
+    active = [(a, b) for a, b in segs if a <= onset < b]
+    if not active:
+        return None, onset, False      # nothing to interrupt
+    return active[0][1] - onset, onset, True
+
+
 def stats(v):
     v = [a for a in v if a is not None]
     if not v:
@@ -225,6 +247,11 @@ def main():
             out_segments=len(segs), overlapping=overlap,
             bargein_at_ms=None if not args.bargein else round(ba, 1),
         ))
+        if args.bargein:
+            sl, on, spk = measure_bargein(x, y, ba)
+            turns[-1].update(stop_latency_ms=None if sl is None else round(sl, 1),
+                             interrupt_onset_ms=None if on is None else round(on, 1),
+                             was_speaking_when_interrupted=spk)
         print(f"  turn {i}: gap={turns[-1]['gap_ms']} rtf={turns[-1]['rtf']} "
               f"text={text[:60]!r}", file=sys.stderr)
         # keep turn 0's audio so the interruption can actually be listened to
@@ -252,6 +279,11 @@ def main():
                         "aliveness-threshold harness/audio.py@b7ccbb7"),
         gap_ms=stats([t["gap_ms"] for t in turns]),
         n_overlapping=sum(t["overlapping"] for t in turns),
+        stop_latency_ms=(stats([t.get("stop_latency_ms") for t in turns])
+                         if args.bargein else None),
+        n_interrupted_while_speaking=(
+            sum(bool(t.get("was_speaking_when_interrupted")) for t in turns)
+            if args.bargein else None),
         n_silent=sum(t["gap_ms"] is None for t in turns),
         rtf=stats([t["rtf"] for t in turns]),
         turns=turns,
@@ -278,6 +310,13 @@ def demo():
     y2 = np.concatenate([sil(600), tone(700), sil(600), tone(500), sil(2100)])
     g2, _, ov2 = measure(x, y2)
     assert ov2 and g2 == 0.0, f"overlap not detected: gap={g2} overlapping={ov2}"
+    # barge-in: user speaks again at 2000ms while the agent is talking 1400-2600ms
+    xb = np.concatenate([sil(300), tone(600), sil(1100), tone(500), sil(1500)])
+    yb = np.concatenate([sil(1400), tone(1200), sil(1400)])
+    sl, on, spk = measure_bargein(xb, yb, 2000)
+    assert spk and abs(on - 2000) < 20 and abs(sl - 600) < 20, (sl, on, spk)
+    # a silent agent has nothing to interrupt and must say so, not score 0
+    assert measure_bargein(xb, np.zeros_like(yb), 2000) == (None, 2000.0, False)
     print(f"demo ok (500 ms gap measured as {g:.1f} ms)")
 
 
