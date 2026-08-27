@@ -100,10 +100,57 @@ stages individually cheaper (swapping `base.en` for `tiny.en` moved the median
 from 506 to 386 ms) or start them earlier. `ARM` cannot go to zero: arming on
 every inter-word pause launches pipelines that get thrown away.
 
-> **Caveat, and it is a big one.** `ARM = 80 ms` works here because the test
-> talker is a piper voice whose longest internal pause is 65 ms. A human pausing
-> mid-sentence would be cut off. **386 ms is not validated on human speech** and
-> should not be quoted as if it were.
+> **Caveat.** Every number above is measured on synthetic piper prompts, so
+> **386 ms is not validated on human speech** and should not be quoted as if it
+> were.
+
+### Does aggressive arming cut real speakers off? No. (tested)
+
+The obvious worry is that `ARM = 80 ms` only survives because the piper test
+talker's longest internal pause is 65 ms, and that a human pausing mid-sentence
+would get truncated. **That was tested directly and it is false.** A sibling
+project (`~/Desktop/Playground/expressive-s2s`) ran 24 held-out CREMA-D human
+actor recordings through a serial control and the fast arm back to back. I
+recomputed all of this from its raw per-turn records, `runs/h0-human-control.json`
+and `runs/h1-human-fast.json`:
+
+| arm | n | median gap | IQR | false endpoints |
+|---|---|---|---|---|
+| H0 serial control | 24 | 772.2 ms | 578–833 | **3 / 24** |
+| H1 `--fast --arm 80` | 24 | 499.1 ms | 400–722 | **3 / 24** |
+
+**Speculation added zero false endpoints.** It cut the median by 273 ms and
+truncated nobody who was not already being truncated.
+
+**The mechanism is that arming is not committing.** When a speaker resumes during
+the pause, the speculative snapshot goes stale, the turn silently falls back to
+serial, and the bad guess is thrown away. In H1, 14 of 24 turns were served
+speculatively (median **441.8 ms**); the other 10 fell back (median **716.5 ms**,
+against **779.6 ms** for those same clips in the serial control). That is why the
+fast arm's p75 is essentially the serial number. Getting the guess wrong costs
+CPU — **51 pipelines launched to serve 14 turns, 37 of them wasted** — not a
+truncated user.
+
+**What does truncate real speakers is the endpointer itself, at 12.5%,
+independent of speculation.** The three losses in each arm are not near-misses:
+they drop 1760 / 2270 / 1700 ms and transcribe as `"You"` or empty. Two of the
+three clips are identical across both arms. So the real target for anyone
+chasing this further is the endpointer, not the arming threshold.
+
+> **A measurement trap worth repeating.** That repo's earlier "0 / 48 cut off"
+> claim rested on a detector that flags `endpoint_hangover_ms < 0` — which
+> *structurally cannot* see truncation, because cutting the buffer drags the
+> measured speech offset earlier too, so the hangover stays positive. On the six
+> genuinely truncated turns above it reads **+5.0, +6.7, +5.0, +30.6, +8.2,
+> +31.6 ms**. Truncation has to be caught by comparing the measured offset
+> against a reference offset, which is what the `truncated` flag above does.
+
+Two things this does *not* license. The CREMA-D runs use a heavier stack than the
+386 ms configuration above (`base.en` final, plus an emotion classifier inside
+the hangover), so **499 ms and 386 ms are not the same measurement** and must not
+be put in one column. And `ARM = 40 ms` — the 347.8 ms row — is *more* aggressive
+than the 80 ms that was actually tested, so it stays out of the headline for the
+right reason: **untested at that threshold**, not because arming is dangerous.
 
 ---
 
@@ -168,9 +215,14 @@ interrupted is just the conversation continuing.
 
 ## Limitations
 
-- **The prompts are synthetic.** Every cascade number and every Moshi number uses
-  the same five piper-rendered prompts. That makes the comparison fair and makes
-  neither of them a claim about human speech. See the `ARM` caveat above.
+- **The prompts are synthetic.** Every cascade number and every Moshi number in
+  the side-by-side uses the same five piper-rendered prompts. That makes the
+  comparison fair and makes neither of them a claim about human speech. The one
+  human-speech result here (24 CREMA-D recordings, above) comes from a different
+  and heavier stack and is reported separately for that reason.
+- **The endpointer truncates ~12.5% of real speakers**, in both the serial and
+  speculative arms. That is a property of the endpointer, not of speculation, and
+  it is the largest unfixed problem in the cascade.
 - **n is small.** 20–100 turns per configuration. Medians are stable across
   repeats; the IQRs are not narrow.
 - **One machine, contended.** These ran on a laptop with other agents' jobs on it.
