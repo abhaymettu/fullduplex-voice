@@ -69,9 +69,12 @@ def main():
         d = json.load(open(mb))
         v = d.get("stop_latency_ms") or {}
         if v:
+            # "stopped early" is a cascade notion: it has a fixed reply buffer to
+            # cut short. Moshi has no committed utterance, so the honest column
+            # is just how long it kept talking.
             print(f'{"Moshi q4 MLX":52s} {v["n"]:4d} {v["median"]:8.1f} '
                   f'{v["iqr_lo"]:7.0f}-{v["iqr_hi"]:<7.0f} '
-                  f'{d.get("n_stopped_early",0):>6d} / {v["n"]:<5d}')
+                  f'{"n/a (no committed buffer)":>14s}')
     else:
         print("  (no Moshi barge-in run yet)")
 

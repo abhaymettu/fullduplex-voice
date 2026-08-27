@@ -238,7 +238,10 @@ def main():
         t0 = time.perf_counter()
         ba = args.bargein_at_ms
         if args.bargein and ba is None:
-            ba = 300 + len(prompts[p]) / SR_MOSHI * 1000 + 900  # ~0.9s into the reply
+            # Moshi answers ~165 ms after the user stops and its replies are
+            # short, so interrupting 900 ms in usually hits silence and measures
+            # nothing. 400 ms lands ~235 ms into the reply, while it is talking.
+            ba = 300 + len(prompts[p]) / SR_MOSHI * 1000 + 400
         x, y, step_ms, text = run_turn(m, prompts[p], tail_ms=args.tail_ms,
                                        bargein_at_ms=ba if args.bargein else None,
                                        bargein_pcm=interrupt)
@@ -263,10 +266,13 @@ def main():
                              was_speaking_when_interrupted=spk)
         print(f"  turn {i}: gap={turns[-1]['gap_ms']} rtf={turns[-1]['rtf']} "
               f"text={text[:60]!r}", file=sys.stderr)
-        # keep turn 0's audio so the interruption can actually be listened to
-        if i == 0:
-            np.save(Path(args.out).with_suffix(".turn0.user.npy"), x)
-            np.save(Path(args.out).with_suffix(".turn0.moshi.npy"), y)
+        # keep audio so the interruption can actually be listened to. In barge-in
+        # mode keep every turn: whether the interruption lands while Moshi is
+        # actually talking is not known until afterwards, and a demo of an
+        # interruption that hit silence demonstrates nothing.
+        if i == 0 or args.bargein:
+            np.save(Path(args.out).with_suffix(f".turn{i}.user.npy"), x)
+            np.save(Path(args.out).with_suffix(f".turn{i}.moshi.npy"), y)
 
     import mlx.core as _mx
     import resource as _res

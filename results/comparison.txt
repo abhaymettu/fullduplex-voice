@@ -1,0 +1,21 @@
+================================================================================================
+MEASURED ON THIS MACHINE  (Apple M4 Pro, 24 GB, macOS)
+gap = agent speech onset - user speech offset, both silence-trimmed (gap.py)
+================================================================================================
+system                                                  n   median             IQR    RTF
+Moshi q4 MLX (n20)                                     18    165.0     115-196       0.90
+cascade, speculative (arm 40, tiny.en, hang 250)       20    347.8     338-450     -
+cascade, speculative (arm 80, tiny.en)                 40    386.2     371-442     -
+cascade, speculative (arm 80, base.en)                 40    506.3     487-533     -
+cascade, unoptimised                                  100    807.4     779-895     -
+
+================================================================================================
+BARGE-IN -- how long the agent keeps talking after the user interrupts
+================================================================================================
+system                                                  n   median             IQR  stopped early
+cascade (tuned, piper reply)                           20   1173.3    1060-1264         0 / 20   
+Moshi q4 MLX                                           20    170.0      91-382     n/a (no committed buffer)
+
+PUBLISHED FIGURES (not measured here, cited for scale)
+  GPT-4o voice (OpenAI, published)     320 ms average, 232 ms minimum -- openai.com/index/hello-gpt-4o, May 2024
+  Moshi (Kyutai, published)            160 ms theoretical, 200 ms in practice -- kyutai.org/Moshi.pdf model card

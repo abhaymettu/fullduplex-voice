@@ -1,12 +1,13 @@
 # fullduplex-voice
 
-**A tuned cascade answers in 386 ms on a laptop, and 499 ms on real human speech.
-The architectural floor everyone assumes is there is mostly the endpointer sitting
-on its hands, waiting out silence it could have been working through.**
+**A tuned cascade answers in 386 ms on this laptop. Moshi, a real full-duplex
+model, answers in 165 ms on the same laptop — and when you interrupt it, it stops
+in 170 ms instead of talking over you for another 1173 ms.**
 
-This repo set out to prove a cascade can never be fast and that you need a native
-speech-to-speech model instead. The measurements did not agree, so the headline
-is the opposite of the pitch. What follows is what the runs actually show.
+This repo set out to prove the cascade has an architectural floor. It does, but it
+is far lower than the pitch assumed and it is not where people think: most of the
+gap is an endpointer waiting out silence it could have been working through. Both
+halves are measured here, on one machine, under one definition of latency.
 
 All timings are from runs on one machine (Apple M4 Pro, 24 GB, macOS) under one
 definition of latency, stated once and used everywhere:
@@ -166,7 +167,33 @@ repo's per-turn records, not quoted from its prose.
 | cascade, speculative (arm 80, tiny.en) | 40 | 386.2 ms | 371–442 |
 | cascade, speculative (arm 80, base.en) | 40 | 506.3 ms | 487–533 |
 | cascade, unoptimised | 100 | 807.4 ms | 779–895 |
-| Moshi q4 (MLX) | — | *see below* | |
+| **Moshi q4 (MLX), full duplex** | **18** | **165.0 ms** | **115–196** |
+
+Moshi is **2.3× faster than the best cascade configuration** and 4.9× faster than
+the unoptimised one. Its median lands between its own published figures (160 ms
+theoretical, 200 ms practice) and below GPT-4o's published 320 ms average.
+
+It is not free. On this machine, running `moshiko-mlx-q4`:
+
+| cost | |
+|---|---|
+| weights on disk | 4805 MB + 385 MB (Mimi) |
+| MLX peak memory | 5897 MB |
+| process RSS peak | 3450 MB |
+| real-time factor | **0.90** median (IQR 0.8–0.9, max 1.0) |
+| model load | 2.4–9.7 s |
+
+RTF 0.90 is the number that matters: it holds real time with **10% headroom and
+no more**. The cascade's stages leave the machine mostly idle between turns;
+Moshi runs a 7B-class model every 80 ms forever, whether anyone is speaking or
+not. Nothing else meaningful runs alongside it on 24 GB.
+
+**Reply quality is the real price.** 2 of 20 turns produced no speech at all
+(reported as no gap, not as a fast one). Answers are on-topic more often than not
+— *"We close on Sundays at 9pm."*, *"Yes, there is parking outside."* — but it
+invents specifics freely, sometimes opens with a non-sequitur (*"Hi, how is it
+going?"* to a question about closing time), and degrades into loops of *"I'm not
+sure, but you can ask."* The cascade's replies are the LM's, and are better.
 
 Published figures, **not measured here**, for scale only:
 
@@ -210,7 +237,31 @@ barge-in on with an always-on VAD and an explicit stop. The point is that it is 
 bolt-on with its own detection latency, whereas in a full-duplex model being
 interrupted is just the conversation continuing.
 
-*Moshi's side of this comparison is below, from `moshi_run.py --bargein`.*
+**Moshi stops.** Same measurement — ms of agent speech after the interrupting
+utterance begins — from `moshi_run.py --bargein`:
+
+| | n | median | IQR | min | max |
+|---|---|---|---|---|---|
+| cascade keeps talking | 20 | 1173 ms | 1060–1264 | 541 | 5916 |
+| **Moshi keeps talking** | **20** | **170 ms** | **91–383** | **40** | **1125** |
+
+**6.9× faster to shut up, and it is a difference in kind rather than degree.** The
+cascade has no channel to be interrupted on: it is not listening while it talks,
+and the reply is a committed buffer. Moshi has no committed buffer and never stops
+listening, so an interruption is not a special case at all — it is just the next
+80 ms frame, with your voice in it.
+
+The Moshi column has no "stopped early" count because the notion does not apply:
+there is no fixed utterance to cut short.
+
+Caveat on n: 20 of 30 barge-in turns landed while Moshi was actually speaking. The
+other 10 hit silence and are excluded rather than scored as instant stops — an
+interruption that hits silence measures nothing. An earlier run interrupting 900 ms
+into the reply landed only 5 of 10, because Moshi's replies are often shorter than
+that; the reported run interrupts 400 ms in.
+
+**Demos** (stereo — user left, agent right, so you can hear who stops):
+`demo/cascade-bargein.m4a` (23 KB) and `demo/moshi-bargein.m4a` (37 KB).
 
 ---
 
@@ -221,6 +272,13 @@ interrupted is just the conversation continuing.
   comparison fair and makes neither of them a claim about human speech. The one
   human-speech result here (24 CREMA-D recordings, above) comes from a different
   and heavier stack and is reported separately for that reason.
+- **Moshi's numbers are n=18 and n=20**, on synthetic prompts, single-turn (state
+  is reset each turn, so none of this measures multi-turn coherence). Its RTF 0.90
+  was measured on a quiet machine; under load it will not hold real time.
+- **Moshi's gap is measured in stream time** (frame index x 80 ms), which is the
+  architectural latency. Because RTF < 1 the wall clock keeps up, so the two agree
+  here — but they would not on a busier machine, and RTF is reported separately
+  for exactly that reason.
 - **The endpointer truncates ~12.5% of real speakers**, in both the serial and
   speculative arms. That is a property of the endpointer, not of speculation, and
   it is the largest unfixed problem in the cascade.
@@ -297,6 +355,8 @@ which is a much more attractive and much more wrong thing to go debug.
 | `cascade_baseline.py` | the cascade numbers, recomputed from raw records |
 | `human_speech.py` | the CREMA-D arming result, recomputed from raw records |
 | `moshi_run.py` | runs Moshi frame by frame and measures the same gap |
+| `repair.py` | checkpoint integrity: `--verify` (sha256), `--scan`, `--fix` |
+| `demo.py` | writes the stereo interruption recordings |
 | `compare.py` | the side-by-side table |
 | `results/` | run records |
 
