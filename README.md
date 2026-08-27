@@ -270,6 +270,24 @@ resumable for free.
 Lesson worth keeping: for a large file over a bad link, **size is not a
 completion check**. The check is that the container parses and the thing loads.
 
+**That lesson immediately cost someone else an hour.** A second agent, working
+independently on the same file mid-repair, reported the checkpoint "byte-exact",
+the model loading at RTF 0.896, the LM emitting valid audio tokens — and
+rustymimi returning all-zero PCM for every frame. It concluded the decoder was
+broken.
+
+It was not. The checkpoint was mine, halfway through repair. The header had been
+patched, so it **parsed and loaded**; the size matched, because I had already
+truncated the junk tail. Both green lights were real. But a scan at that moment
+showed the file was still **50.8% holes, with 390 of 1247 tensors touching a hole
+and 370 of them entirely zero — including the `audio_embs.*` audio embedding
+tables.** A model whose audio embeddings are zeros cannot represent audio; it
+emits degenerate tokens, and those decode to silence.
+
+So "loads successfully" and "emits valid tokens" are not integrity checks either.
+A partially-zeroed checkpoint passes both and then behaves like a broken decoder,
+which is a much more attractive and much more wrong thing to go debug.
+
 ## Layout
 
 | file | what |
