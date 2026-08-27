@@ -29,7 +29,7 @@ CHUNK = 1 << 26          # 64 MB scan window
 # request small enough that a stalled one is cheap to retry and never parks a
 # gigabyte in RAM.
 SUB = 1 << 24
-WORKERS = 6
+WORKERS = 12
 
 
 def fetch(start, end, retries=8):

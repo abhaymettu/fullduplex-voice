@@ -234,6 +234,41 @@ interrupted is just the conversation continuing.
 - **WER is not zero.** The fastest cascade config uses `tiny.en` and scores
   WER 0.033 against the prompts. Some of its speed is bought with accuracy.
 
+## What went wrong getting Moshi to run
+
+Reported because the cost is part of the result.
+
+**The link was the binding constraint all night.** Several agents were pulling at
+once. Measured: Cloudflare 166 KB/s, PyPI 41 KB/s, HuggingFace stalling to
+25 KB/s. A 31 MB `mlx-metal` wheel could not be fetched at all; `mlx`, `piper`,
+`onnxruntime` and `sounddevice` were copied out of a sibling venv instead (same
+Python 3.12, same platform, zero bandwidth).
+
+**Two `hf download` processes on the same repo corrupted the weights.** I started
+a second one by accident. `huggingface_hub` fetches byte ranges in parallel, so a
+partial file is *sparse*: regions that were written are correct, regions nobody
+wrote yet read back as NUL. The tell was `du` reporting 34 MB for a file `ls`
+called 1.1 GB.
+
+The damage survived to the end and the model would not load:
+
+```
+RuntimeError: [json.exception.parse_error.101] parse error at line 1, column 34209:
+invalid string: control character U+0000 (NUL) must be escaped; last read: '"depformer.sli<U+0000>'
+```
+
+A size check called the file complete — it was 4,820,474,823 bytes against a true
+4,805,545,317, and **being larger than the target was itself the corruption
+signature**, not evidence of success. `repair.py` fixed it without refetching
+4.5 GB: pull the 168 KB header, parse it to confirm the true total, truncate the
+junk tail, scan for NUL runs, and re-fetch only those ranges. **73.8% of the file
+(3548 MB) was holes**, and their boundaries landed exactly on 1 GB marks — the
+signature of the parallel chunker. Re-scanning holes on each run makes it
+resumable for free.
+
+Lesson worth keeping: for a large file over a bad link, **size is not a
+completion check**. The check is that the container parses and the thing loads.
+
 ## Layout
 
 | file | what |
