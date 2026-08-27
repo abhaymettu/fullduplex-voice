@@ -1,10 +1,5 @@
 .venv/
 __pycache__/
-*.pyc
 models/
-data/raw/
-*.pt
-*.onnx
-*.safetensors
-audio/
-.DS_Store
+logs/
+*.incomplete

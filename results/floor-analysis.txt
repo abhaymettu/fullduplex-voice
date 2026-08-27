@@ -1,0 +1,62 @@
+========================================================================================
+CASCADE RUNS  (sibling repo, gap = agent speech onset - user speech offset)
+========================================================================================
+run                                    n  hang   arm  gap med           IQR  W_tot
+opt-fast-tiny-arm40-hang250-n20.json  20   250  40.0    347.8    338-450       292
+opt-fast-tiny-arm40-n20.json          20   350  40.0    376.0    363-418       325
+opt-fast-arm80-tiny-n20.json          20   350  80.0    379.5    371-400         -
+opt-fast-tiny-hang250-rep2-n20.json   20   250  80.0    394.1    377-525       302
+opt-fast-tiny-hang250-n20.json        20   250  80.0    394.4    373-474       294
+opt-fast-tiny-rep2-n20.json           20   350  80.0    395.8    377-458       299
+opt-fast-arm80-n20.json               20   350  80.0    498.2    488-514         -
+opt-fast-hang200-n20.json             20   150  80.0    510.7    502-544         -
+opt-fast-hang120-n20.json             20   120  80.0    511.7    494-554         -
+opt-fast-hang250-n20.json             20   250  80.0    515.4    496-547         -
+opt-fast-arm80-rep2-n20.json          20   350  80.0    517.0    486-537       408
+opt-fast-n20.json                     20   350 150.0    573.1    567-617         -
+opt-baseline-rep2-n20.json            20   350     -    796.4    787-918       431
+opt-baseline-rep3-n20.json            20   350     -    797.2    776-901       435
+opt-baseline-blackhole-n20.json       20   350     -    802.6    777-889         -
+opt-baseline-newcode-n20.json         20   350     -    829.3    770-857         -
+opt-baseline-n20.json                 20   350     -    882.9    804-938         -
+
+========================================================================================
+TEST 1 -- sweep the hangover, hold everything else. Does the gap move?
+========================================================================================
+ hangover   gap med  exposed work  hang+exposed
+      120     511.7         385.4         505.4
+      150     510.7         351.9         501.9
+      250     515.4         250.8         500.8
+      350     498.2         134.4         484.4
+      350     517.0         138.8         488.8
+
+  hangover range 120-350 ms  ->  gap range 498.2-517.0 ms (spread 18.8 ms)
+  Cutting the hangover by 230 ms bought 19 ms. The hangover is not the floor.
+
+========================================================================================
+TEST 2 -- predicted gap = max(HANGOVER, ARM + W_total) vs measured
+========================================================================================
+run                                     pred    meas     err
+opt-fast-tiny-arm40-hang250-n20.json   332.3   347.8   +15.5
+opt-fast-tiny-arm40-n20.json           365.2   376.0   +10.7
+opt-fast-tiny-hang250-rep2-n20.json    382.4   394.1   +11.6
+opt-fast-tiny-hang250-n20.json         374.4   394.4   +20.0
+opt-fast-tiny-rep2-n20.json            379.0   395.8   +16.8
+opt-fast-arm80-rep2-n20.json           488.5   517.0   +28.5
+opt-baseline-rep2-n20.json             781.3   796.4   +15.2
+opt-baseline-rep3-n20.json             785.0   797.2   +12.2
+
+  median residual +15.3 ms over n=8 runs (handoff to the audio callback is ~3 ms of it)
+
+========================================================================================
+TEST 3 -- are the stages serial? sum(stage work) vs pipeline span
+========================================================================================
+  best run: opt-fast-tiny-arm40-hang250-n20.json  (n=20)
+  stage              work ms  in-gap ms   hidden by speculation?
+  asr_final            111.5        0.0   yes
+  lm_ttft               98.2        0.3   yes
+  lm_sentence           32.1       31.2   NO -- exposed
+  tts                   43.5       43.5   NO -- exposed
+  SUM                  292.3
+
+  floor for this stack = ARM + W_total = 40 + 292 = 332 ms;  measured median 347.8 ms
