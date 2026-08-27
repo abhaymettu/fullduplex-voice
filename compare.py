@@ -53,6 +53,28 @@ def main():
         print(f'{k:52s} {n:4d} {m:8.1f} {lo:7.0f}-{hi:<7.0f} '
               f'{"-" if rtf is None else f"{rtf:6.2f}"}')
 
+    # --- barge-in -------------------------------------------------------
+    print("\n" + "=" * 96)
+    print("BARGE-IN -- how long the agent keeps talking after the user interrupts")
+    print("=" * 96)
+    cb = R / "cascade-bargein.json"
+    mb = R / "moshi-bargein.json"
+    print(f'{"system":52s} {"n":>4s} {"median":>8s} {"IQR":>15s} {"stopped early":>14s}')
+    if cb.exists():
+        d = json.load(open(cb)); v = d["stop_latency_ms"]
+        print(f'{"cascade (tuned, piper reply)":52s} {v["n"]:4d} {v["median"]:8.1f} '
+              f'{v["iqr_lo"]:7.0f}-{v["iqr_hi"]:<7.0f} '
+              f'{d["n_stopped_early"]:>6d} / {v["n"]:<5d}')
+    if mb.exists():
+        d = json.load(open(mb))
+        v = d.get("stop_latency_ms") or {}
+        if v:
+            print(f'{"Moshi q4 MLX":52s} {v["n"]:4d} {v["median"]:8.1f} '
+                  f'{v["iqr_lo"]:7.0f}-{v["iqr_hi"]:<7.0f} '
+                  f'{d.get("n_stopped_early",0):>6d} / {v["n"]:<5d}')
+    else:
+        print("  (no Moshi barge-in run yet)")
+
     print("\nPUBLISHED FIGURES (not measured here, cited for scale)")
     for k, v in PUBLISHED.items():
         print(f"  {k:36s} {v}")

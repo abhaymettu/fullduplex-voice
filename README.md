@@ -149,7 +149,7 @@ going.
 
 | | n | median | IQR | min | max | stopped early |
 |---|---|---|---|---|---|---|
-| cascade keeps talking after interruption | 20 | **1200 ms** | 1059–1298 | 398 | 5966 | **0 / 20** |
+| cascade keeps talking after interruption | 20 | **1173 ms** | 1060–1264 | 541 | 5916 | **0 / 20** |
 
 Zero out of twenty stopped. And because `capture()` builds a fresh queue per
 turn, the interrupting utterance is not merely late — it is discarded, so the
